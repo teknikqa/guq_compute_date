@@ -1,0 +1,4 @@
+name = GU-Q Compute Date
+description = Calculate the date based on user input.
+package = GU-Q
+core = 7.x

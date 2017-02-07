@@ -1,0 +1,41 @@
+<?php
+
+/**
+ * @file
+ * This module calculates the value of a year given BC or AD dates.
+ *
+ * MySQL does not properly support BC dates. Support in Drupal is also flaky.
+ * Using separate fields to obtain the year and era, this module can generate
+ * an integer value of a year.
+ */
+
+/**
+ * Implements hook_entity_presave().
+ */
+function guq_compute_date_entity_presave($entity, $type) {
+  if ($type == 'node' && ($entity->type == 'repository_item' || $entity->type == 'timeline_date')) {
+    $language = $entity->language;
+    foreach ($entity->field_map_date[$language] as $dates) {
+      // Load field collection item.
+      $map_dates = field_collection_field_get_entity($dates);
+      $era = $map_dates->field_calendar_era[$language][0]['value'];
+      $year = $map_dates->field_year[$language][0]['value'];
+      if ($era == '1') {
+        $map_dates->field_computed_year[$language][0]['value'] = -$year;
+      }
+      else {
+        $map_dates->field_computed_year[$language][0]['value'] = $year;
+      }
+    }
+    $map_dates->save(TRUE);
+  }
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function guq_compute_date_form_alter(&$form, &$form_state, $form_id) {
+  if ($form_id == 'repository_item_node_form' || $form_id == 'timeline_date_node_form') {
+    $form['field_map_date']['und'][0]['field_computed_year']['#access'] = 0;
+  }
+}
